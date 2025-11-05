@@ -242,22 +242,31 @@ function TeacherView({ sessionCode }) {
   return { parsedTitle, parsedDescription, parsedCode };
 };
 const parseMultipleSnippets = (content) => {
-  // Split by ENDCODE to find multiple snippets
-  const snippetBlocks = content.split(/ENDCODE/i);
   const snippets = [];
   
-  snippetBlocks.forEach(block => {
-    if (block.trim()) {
-      const { parsedTitle, parsedDescription, parsedCode } = parseImportFile(block + '\nENDCODE');
-      if (parsedCode) {
-        snippets.push({
-          title: parsedTitle,
-          description: parsedDescription,
-          code: parsedCode
-        });
-      }
+  // Find all CODE: ... ENDCODE blocks
+  const regex = /TITLE:\s*(.+?)[\r\n]+DESC:\s*(.+?)[\r\n]+CODE:\s*([\s\S]*?)ENDCODE/gi;
+  let match;
+  
+  while ((match = regex.exec(content)) !== null) {
+    snippets.push({
+      title: match[1].trim(),
+      description: match[2].trim(),
+      code: match[3].trim()
+    });
+  }
+  
+  // If no matches with full format, try just CODE: ... ENDCODE
+  if (snippets.length === 0) {
+    const simpleRegex = /CODE:\s*([\s\S]*?)ENDCODE/gi;
+    while ((match = simpleRegex.exec(content)) !== null) {
+      snippets.push({
+        title: '',
+        description: '',
+        code: match[1].trim()
+      });
     }
-  });
+  }
   
   return snippets;
 };
